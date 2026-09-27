@@ -131,11 +131,29 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="pt-12 mt-12 border-t border-warm-cream/10 flex flex-col sm:flex-row items-center justify-between text-xs text-warm-cream/40 font-light gap-4">
-            <p>
+          <div className="pt-10 mt-12 border-t border-warm-cream/10 flex flex-col md:flex-row items-center justify-between text-xs text-warm-cream/40 font-light gap-4">
+            <p className="text-center md:text-left">
               © {new Date().getFullYear()} {siteConfig.name}. Kaduwela, Sri Lanka. All rights reserved.
             </p>
-            <p className="font-serif italic text-warm-cream/50">
+
+            {/* Developer Attribution */}
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-sans tracking-wide">
+              <span className="text-warm-cream/50">Designed & Engineered by</span>
+              <a
+                href="https://github.com/sasiruliyanage2004"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative inline-flex items-center gap-1.5 font-medium text-warm-cream hover:text-muted-gold transition-colors duration-200"
+                title="Sasiru Liyanage - Full-Stack Developer & UI Architect"
+              >
+                <span className="underline decoration-muted-gold/40 underline-offset-4 group-hover:decoration-muted-gold transition-colors">
+                  Sasiru Liyanage
+                </span>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-gold/80 group-hover:bg-muted-gold group-hover:scale-125 transition-all" />
+              </a>
+            </div>
+
+            <p className="font-serif italic text-warm-cream/50 text-center md:text-right">
               Crafted coffee, thoughtful food and a place to slow down.
             </p>
           </div>

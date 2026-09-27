@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MobileStickyActions } from "@/components/layout/MobileStickyActions";
 import { ReadingProgressBar } from "@/components/ui/ReadingProgressBar";
+import { DeveloperConsoleBadge } from "@/components/ui/DeveloperConsoleBadge";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -29,6 +30,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://example.com"),
+  authors: [{ name: "Sasiru Liyanage", url: "https://github.com/sasiruliyanage2004" }],
+  creator: "Sasiru Liyanage",
+  publisher: "Sasiru Liyanage",
   title: {
     template: `%s | ${siteConfig.businessName} — Kaduwela`,
     default: `${siteConfig.businessName} | Coffee Shop & Café in Kaduwela`,
@@ -124,6 +128,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-warm-cream text-espresso selection:bg-muted-gold selection:text-espresso pb-14 lg:pb-0">
+        <DeveloperConsoleBadge />
         <ReadingProgressBar />
         <Navbar />
         <main className="flex-1 flex flex-col">{children}</main>
