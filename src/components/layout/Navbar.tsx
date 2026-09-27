@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
           showScrolledStyle
             ? "bg-[#F5F0E8]/95 backdrop-blur-md py-4 border-b border-espresso/10 shadow-[0_2px_12px_rgba(27,20,16,0.05)]"
-            : "bg-gradient-to-b from-espresso/80 via-espresso/40 to-transparent py-6 border-b border-transparent"
+            : "bg-gradient-to-b from-espresso/80 via-espresso/40 to-espresso/0 py-6 border-b-0 border-none shadow-none"
         }`}
       >
         <Container width="wide">

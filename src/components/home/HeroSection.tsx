@@ -28,7 +28,7 @@ export const HeroSection: React.FC = () => {
         />
         {/* Soft Vignette & Gradient Overlays for High Legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-espresso via-espresso/60 to-espresso/40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-espresso/80 via-transparent to-espresso/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-espresso/80 via-espresso/0 to-espresso/60" />
       </motion.div>
 
       {/* Main Content Area */}
