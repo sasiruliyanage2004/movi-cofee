@@ -2,6 +2,7 @@ import React from "react";
 import { HeroSection } from "@/components/home/HeroSection";
 import { QuickInfoStrip } from "@/components/home/QuickInfoStrip";
 import { SignatureCoffeeSection } from "@/components/home/SignatureCoffeeSection";
+import { CoffeeMatcher } from "@/components/home/CoffeeMatcher";
 import { OurStorySection } from "@/components/home/OurStorySection";
 import { CoffeeCraftSection } from "@/components/home/CoffeeCraftSection";
 import { MenuPreviewSection } from "@/components/home/MenuPreviewSection";
@@ -24,6 +25,9 @@ export default function HomePage() {
 
       {/* 3. Signature Coffee */}
       <SignatureCoffeeSection />
+
+      {/* Interactive Coffee Matcher */}
+      <CoffeeMatcher />
 
       {/* 4. Our Story */}
       <OurStorySection />

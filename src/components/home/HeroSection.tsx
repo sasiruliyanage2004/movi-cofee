@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { siteConfig } from "@/data/site";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { LiveStatusBadge } from "@/components/ui/LiveStatusBadge";
 
 export const HeroSection: React.FC = () => {
   return (
@@ -126,9 +127,7 @@ export const HeroSection: React.FC = () => {
             </div>
 
             <div>
-              <span className="text-muted-gold font-normal">
-                {siteConfig.contact.openingHoursSummary}
-              </span>
+              <LiveStatusBadge theme="dark" />
             </div>
 
             <div className="text-warm-cream/50">

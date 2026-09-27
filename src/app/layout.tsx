@@ -5,6 +5,7 @@ import { siteConfig } from "@/data/site";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MobileStickyActions } from "@/components/layout/MobileStickyActions";
+import { ReadingProgressBar } from "@/components/ui/ReadingProgressBar";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -123,6 +124,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-warm-cream text-espresso selection:bg-muted-gold selection:text-espresso pb-14 lg:pb-0">
+        <ReadingProgressBar />
         <Navbar />
         <main className="flex-1 flex flex-col">{children}</main>
         <Footer />

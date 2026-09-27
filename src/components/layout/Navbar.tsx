@@ -8,6 +8,7 @@ import { siteConfig } from "@/data/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { MobileMenu } from "./MobileMenu";
+import { GatheringModal } from "@/components/booking/GatheringModal";
 
 export interface NavbarProps {
   transparentAtTop?: boolean;
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -96,7 +98,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </nav>
 
             {/* Right Action on Desktop */}
-            <div className="hidden lg:flex items-center space-x-4">
+            <div className="hidden lg:flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => setBookingModalOpen(true)}
+                className={`text-[11px] font-sans uppercase tracking-[0.18em] px-4 py-2.5 transition-colors cursor-pointer border ${
+                  isDarkHeader
+                    ? "border-warm-cream/30 text-warm-cream hover:border-warm-cream hover:bg-warm-cream/10"
+                    : "border-espresso/30 text-espresso hover:border-espresso hover:bg-espresso/5"
+                }`}
+              >
+                BOOK TABLE
+              </button>
               <Button
                 variant={isDarkHeader ? "gold" : "primary"}
                 size="sm"
@@ -132,6 +145,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       <MobileMenu
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
+      />
+
+      {/* Table & Gathering Booking Modal */}
+      <GatheringModal
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
       />
     </>
   );

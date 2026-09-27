@@ -5,6 +5,7 @@ import { storyData } from "@/data/story";
 import { Container } from "@/components/ui/Container";
 import { ImageReveal } from "@/components/ui/ImageReveal";
 import { Button } from "@/components/ui/Button";
+import { BrewRatioCalculator } from "@/components/coffee/BrewRatioCalculator";
 
 export const metadata: Metadata = {
   title: "Our Story",
@@ -87,6 +88,13 @@ export default function StoryPage() {
           );
         })}
       </div>
+
+      {/* Interactive Brew Calibration Ritual */}
+      <section className="pb-28">
+        <Container width="wide">
+          <BrewRatioCalculator />
+        </Container>
+      </section>
 
       {/* OUR VALUES Section */}
       <section className="py-24 sm:py-32 bg-espresso text-warm-cream border-t border-espresso">
