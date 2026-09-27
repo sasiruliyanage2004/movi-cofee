@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --color-espresso: #1B1410;
+  --color-deep-coffee: #2B1B14;
+  --color-warm-cream: #F5F0E8;
+  --color-soft-beige: #E8DED0;
+  --color-muted-coffee: #74533D;
+  --color-muted-gold: #B79A67;
+  --color-cream-light: #FAF8F5;
+
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-sans: var(--font-manrope), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  --background: #F5F0E8;
+  --foreground: #1B1410;
+}
+
+/* Base resets & typography foundation */
+html {
+  background-color: #F5F0E8;
+  color: #1B1410;
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #F5F0E8;
+  color: #1B1410;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  selection-background-color: #B79A67;
+  selection-color: #1B1410;
+}
+
+::selection {
+  background-color: #B79A67;
+  color: #1B1410;
+}
+
+/* Editorial typography hierarchy helpers */
+h1, h2, h3, h4, .font-editorial {
+  font-family: var(--font-cormorant), Georgia, serif;
+  letter-spacing: -0.015em;
+  font-feature-settings: "liga" 1, "kern" 1;
+}
+
+/* Subtle border tokens */
+.border-subtle {
+  border-color: rgba(27, 20, 16, 0.1);
+}
+
+.border-subtle-light {
+  border-color: rgba(245, 240, 232, 0.12);
+}
+
+.border-gold-subtle {
+  border-color: rgba(183, 154, 103, 0.3);
+}
+
+/* Hairline dividers */
+.divider-hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(27, 20, 16, 0) 0%,
+    rgba(27, 20, 16, 0.12) 20%,
+    rgba(27, 20, 16, 0.12) 80%,
+    rgba(27, 20, 16, 0) 100%
+  );
+}
+
+.divider-hairline-dark {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(245, 240, 232, 0) 0%,
+    rgba(245, 240, 232, 0.15) 20%,
+    rgba(245, 240, 232, 0.15) 80%,
+    rgba(245, 240, 232, 0) 100%
+  );
+}
+
+/* Accessible focus styling */
+:focus-visible {
+  outline: 2px solid #B79A67;
+  outline-offset: 3px;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
