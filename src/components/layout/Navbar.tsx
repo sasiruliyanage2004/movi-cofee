@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
@@ -21,6 +21,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const pathname = usePathname();
+
+  const handleCloseMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
+  const handleCloseBookingModal = useCallback(() => {
+    setBookingModalOpen(false);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -125,7 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className={`p-2 -mr-2 transition-colors focus-visible:outline-2 focus-visible:outline-muted-gold cursor-pointer ${
+                className={`p-2.5 -mr-2 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-muted-gold cursor-pointer ${
                   isDarkHeader
                     ? "text-warm-cream hover:text-muted-gold"
                     : "text-espresso hover:text-muted-coffee"
@@ -144,13 +152,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Menu Drawer */}
       <MobileMenu
         isOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
+        onClose={handleCloseMobileMenu}
       />
 
       {/* Table & Gathering Booking Modal */}
       <GatheringModal
         isOpen={bookingModalOpen}
-        onClose={() => setBookingModalOpen(false)}
+        onClose={handleCloseBookingModal}
       />
     </>
   );

@@ -10,7 +10,7 @@ import { LiveStatusBadge } from "@/components/ui/LiveStatusBadge";
 
 export const HeroSection: React.FC = () => {
   return (
-    <section className="relative min-h-[95vh] lg:min-h-screen flex flex-col justify-between pt-28 pb-8 bg-espresso text-warm-cream overflow-hidden">
+    <section className="relative min-h-[92vh] min-h-[92dvh] lg:min-h-screen flex flex-col justify-between pt-24 sm:pt-28 pb-5 sm:pb-8 bg-espresso text-warm-cream overflow-x-clip">
       {/* Background Cinematic Image with Subtle Scale Animation */}
       <motion.div
         initial={{ scale: 1.05 }}
@@ -32,7 +32,7 @@ export const HeroSection: React.FC = () => {
       </motion.div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 my-auto py-12 sm:py-20">
+      <div className="relative z-10 my-auto py-6 sm:py-16">
         <Container width="wide">
           <div className="max-w-3xl">
             {/* Eyebrow */}
@@ -40,7 +40,7 @@ export const HeroSection: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-flex items-center gap-3 mb-6"
+              className="inline-flex items-center gap-3 mb-5 sm:mb-6"
             >
               <span className="w-8 h-px bg-muted-gold" />
               <span className="font-sans text-xs uppercase tracking-[0.28em] text-muted-gold font-medium">
@@ -57,7 +57,7 @@ export const HeroSection: React.FC = () => {
                 delay: 0.15,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-normal leading-[1.02] tracking-tight text-warm-cream mb-8"
+              className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal leading-[1.05] tracking-tight text-warm-cream mb-6 sm:mb-8"
             >
               <span>{siteConfig.heroHeadline.line1}</span>
               <br />

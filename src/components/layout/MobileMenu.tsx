@@ -15,10 +15,14 @@ export interface MobileMenuProps {
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const prevPathname = React.useRef(pathname);
 
-  // Close menu on route change
+  // Close menu only when route actually changes (not on initial mount/open)
   useEffect(() => {
-    onClose();
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      onClose();
+    }
   }, [pathname, onClose]);
 
   // Prevent body scroll when menu is active
@@ -56,7 +60,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex flex-col bg-espresso text-warm-cream lg:hidden"
+          className="fixed inset-0 z-50 flex flex-col bg-espresso text-warm-cream lg:hidden h-[100dvh] pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-6 border-b border-warm-cream/10">
