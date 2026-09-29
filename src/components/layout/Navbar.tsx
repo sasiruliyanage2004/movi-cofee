@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, Lock } from "lucide-react";
 import { siteConfig } from "@/data/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -126,6 +126,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 VIEW MENU
               </Button>
+              <Link
+                href="/admin"
+                className={`p-2 transition-colors rounded hover:text-muted-gold ${
+                  isDarkHeader ? "text-warm-cream/60" : "text-espresso/60"
+                }`}
+                title="Owner / Staff Portal"
+                aria-label="Owner Dashboard"
+              >
+                <Lock className="w-4 h-4" />
+              </Link>
             </div>
 
             {/* Mobile Hamburger Trigger */}

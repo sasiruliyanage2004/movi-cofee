@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import { siteConfig } from "@/data/site";
 import { Container } from "@/components/ui/Container";
 
@@ -136,21 +137,34 @@ export const Footer: React.FC = () => {
               © {new Date().getFullYear()} {siteConfig.name}. Kaduwela, Sri Lanka. All rights reserved.
             </p>
 
-            {/* Developer Attribution */}
-            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-sans tracking-wide">
-              <span className="text-warm-cream/50">Designed & Engineered by</span>
-              <a
-                href="https://github.com/sasiruliyanage2004"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative inline-flex items-center gap-1.5 font-medium text-warm-cream hover:text-muted-gold transition-colors duration-200"
-                title="Sasiru Liyanage - Full-Stack Developer & UI Architect"
+            {/* Developer Attribution & Owner Access */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] sm:text-xs font-sans tracking-wide">
+              <div className="flex items-center gap-1.5">
+                <span className="text-warm-cream/50">Designed & Engineered by</span>
+                <a
+                  href="https://github.com/sasiruliyanage2004"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative inline-flex items-center gap-1.5 font-medium text-warm-cream hover:text-muted-gold transition-colors duration-200"
+                  title="Sasiru Liyanage - Full-Stack Developer & UI Architect"
+                >
+                  <span className="underline decoration-muted-gold/40 underline-offset-4 group-hover:decoration-muted-gold transition-colors">
+                    Sasiru Liyanage
+                  </span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-gold/80 group-hover:bg-muted-gold group-hover:scale-125 transition-all" />
+                </a>
+              </div>
+
+              <span className="text-warm-cream/20 hidden sm:inline">•</span>
+
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 text-warm-cream/50 hover:text-muted-gold transition-colors"
+                title="Management & Owner Portal"
               >
-                <span className="underline decoration-muted-gold/40 underline-offset-4 group-hover:decoration-muted-gold transition-colors">
-                  Sasiru Liyanage
-                </span>
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-gold/80 group-hover:bg-muted-gold group-hover:scale-125 transition-all" />
-              </a>
+                <Lock className="w-3 h-3 text-muted-gold" />
+                <span>Owner Portal</span>
+              </Link>
             </div>
 
             <p className="font-serif italic text-warm-cream/50 text-center md:text-right">

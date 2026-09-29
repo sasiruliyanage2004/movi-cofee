@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin } from "lucide-react";
+import { X, MapPin, Lock } from "lucide-react";
 import { siteConfig } from "@/data/site";
 import { Button } from "@/components/ui/Button";
 
@@ -142,11 +142,21 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                 </Button>
               </div>
 
-              <div className="pt-4 flex items-center gap-2 text-warm-cream/60 text-xs font-sans tracking-wide">
-                <MapPin className="w-4 h-4 text-muted-gold shrink-0" />
-                <span>
-                  {siteConfig.location.city}, {siteConfig.location.country}
-                </span>
+              <div className="pt-4 flex items-center justify-between text-warm-cream/60 text-xs font-sans tracking-wide">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-gold shrink-0" />
+                  <span>
+                    {siteConfig.location.city}, {siteConfig.location.country}
+                  </span>
+                </div>
+                <Link
+                  href="/admin"
+                  onClick={onClose}
+                  className="flex items-center gap-1.5 text-[11px] text-warm-cream/50 hover:text-muted-gold transition-colors font-mono tracking-wider"
+                >
+                  <Lock className="w-3.5 h-3.5 text-muted-gold" />
+                  <span>Owner</span>
+                </Link>
               </div>
             </div>
           </div>
