@@ -1,11 +1,16 @@
 "use server";
 
 import { dbStorage } from "@/lib/db/storage";
+import { supabaseService } from "@/lib/supabase/service";
+import { isSupabaseServerConfigured } from "@/lib/supabase/server";
 import { BusinessSettings, SeasonalExperience } from "@/types/settings";
 import { revalidatePath } from "next/cache";
 
 export async function updateBusinessSettingsAction(newSettings: Partial<BusinessSettings>) {
   try {
+    if (isSupabaseServerConfigured()) {
+      await supabaseService.updateBusinessSettings(newSettings);
+    }
     const updated = await dbStorage.updateBusinessSettings(newSettings);
     revalidatePath("/");
     revalidatePath("/visit");

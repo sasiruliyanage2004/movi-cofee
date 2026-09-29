@@ -1,6 +1,8 @@
-import { Reservation, CreateReservationInput, ReservationStatus } from "@/types/reservation";
+import { Reservation, CreateReservationInput, ReservationStatus, SeatingArea } from "@/types/reservation";
 import { BusinessSettings, SeasonalExperience } from "@/types/settings";
 import { AnalyticsEvent } from "@/types/analytics";
+import { CafeTable } from "@/types/table";
+import { Customer } from "@/types/customer";
 import { siteConfig } from "@/data/site";
 
 export interface ContactInquiry {
@@ -17,6 +19,8 @@ export interface ContactInquiry {
 interface PlatformDatabase {
   reservations: Reservation[];
   inquiries: ContactInquiry[];
+  tables: CafeTable[];
+  customers: Customer[];
   settings: BusinessSettings;
   seasonal: SeasonalExperience[];
   analytics: AnalyticsEvent[];
@@ -71,6 +75,42 @@ const initialDatabase: PlatformDatabase = {
       message: "Hello team, can we host a small photography and design workshop (8 guests) on a Sunday morning?",
       createdAt: "2026-09-28T11:00:00.000Z",
       status: "unread",
+    },
+  ],
+  tables: [
+    { id: "tbl-01", tableNumber: "T-01", capacity: 2, seatingArea: "quiet-nook", isAvailable: true, isActive: true, notes: "Near window & power outlets", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-02", tableNumber: "T-02", capacity: 2, seatingArea: "quiet-nook", isAvailable: true, isActive: true, notes: "Cozy corner table", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-03", tableNumber: "T-03", capacity: 4, seatingArea: "salon", isAvailable: true, isActive: true, notes: "Main espresso bar view", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-04", tableNumber: "T-04", capacity: 4, seatingArea: "salon", isAvailable: true, isActive: true, notes: "Leather booth seating", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-05", tableNumber: "T-05", capacity: 6, seatingArea: "salon", isAvailable: true, isActive: true, notes: "Spacious salon center table", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-06", tableNumber: "T-06", capacity: 8, seatingArea: "communal", isAvailable: true, isActive: true, notes: "Solid teak communal tasting table", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-07", tableNumber: "C-01", capacity: 2, seatingArea: "courtyard", isAvailable: true, isActive: true, notes: "Garden breeze courtyard table", createdAt: "2026-09-01T00:00:00.000Z" },
+    { id: "tbl-08", tableNumber: "C-02", capacity: 4, seatingArea: "courtyard", isAvailable: true, isActive: true, notes: "Canopied outdoor lounge table", createdAt: "2026-09-01T00:00:00.000Z" },
+  ],
+  customers: [
+    {
+      id: "cust-001",
+      name: "Nimal Perera",
+      phone: "+94 77 123 4567",
+      email: "nimal.p@example.com",
+      totalVisits: 3,
+      lastVisitAt: "2026-09-29T08:30:00.000Z",
+      preferredSeating: "quiet-nook",
+      dietaryNotes: "Oat milk latte regular",
+      createdAt: "2026-08-15T10:00:00.000Z",
+      updatedAt: "2026-09-29T08:30:00.000Z",
+    },
+    {
+      id: "cust-002",
+      name: "Sanduni Jayawardena",
+      phone: "+94 71 987 6543",
+      email: "sanduni.j@example.com",
+      totalVisits: 2,
+      lastVisitAt: "2026-09-29T14:15:00.000Z",
+      preferredSeating: "courtyard",
+      dietaryNotes: "Cold Brew enthusiast",
+      createdAt: "2026-09-01T12:00:00.000Z",
+      updatedAt: "2026-09-29T14:15:00.000Z",
     },
   ],
   settings: {
@@ -256,5 +296,54 @@ export const dbStorage = {
       popularItems,
       recentEvents: db.analytics.slice(0, 20),
     };
+  },
+
+  // Tables
+  async getAllTables(): Promise<CafeTable[]> {
+    return [...(db.tables || [])].sort((a, b) => a.tableNumber.localeCompare(b.tableNumber));
+  },
+
+  async getTables(): Promise<CafeTable[]> {
+    return [...(db.tables || [])].filter((t) => t.isActive).sort((a, b) => a.tableNumber.localeCompare(b.tableNumber));
+  },
+
+  async toggleTableStatus(id: string, isActive: boolean): Promise<CafeTable | null> {
+    const table = db.tables?.find((t) => t.id === id);
+    if (!table) return null;
+    table.isActive = isActive;
+    return table;
+  },
+
+  async addTable(input: { tableNumber: string; capacity: number; seatingArea: SeatingArea; notes?: string }): Promise<CafeTable> {
+    const newTable: CafeTable = {
+      id: `tbl-${Date.now()}`,
+      tableNumber: input.tableNumber,
+      capacity: input.capacity,
+      seatingArea: input.seatingArea,
+      isAvailable: true,
+      isActive: true,
+      notes: input.notes,
+      createdAt: new Date().toISOString(),
+    };
+    if (!db.tables) db.tables = [];
+    db.tables.push(newTable);
+    return newTable;
+  },
+
+  async assignTable(reservationId: string, tableId: string | null): Promise<Reservation | null> {
+    const res = db.reservations.find((r) => r.id === reservationId);
+    if (!res) return null;
+    res.tableId = tableId || undefined;
+    res.updatedAt = new Date().toISOString();
+    return res;
+  },
+
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    return [...(db.customers || [])].sort((a, b) => {
+      const aTime = a.lastVisitAt ? new Date(a.lastVisitAt).getTime() : 0;
+      const bTime = b.lastVisitAt ? new Date(b.lastVisitAt).getTime() : 0;
+      return bTime - aTime;
+    });
   },
 };

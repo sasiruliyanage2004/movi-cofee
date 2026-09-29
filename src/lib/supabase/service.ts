@@ -237,6 +237,101 @@ export const supabaseService = {
     }));
   },
 
+  async getAllTables(): Promise<CafeTable[] | null> {
+    const supabase = getSupabaseServerClient();
+    if (!supabase) return null;
+
+    const { data, error } = await supabase
+      .from("tables")
+      .select("*")
+      .order("table_number", { ascending: true });
+
+    if (error) {
+      console.error("[Supabase] getAllTables error:", error.message);
+      return null;
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      tableNumber: row.table_number,
+      capacity: row.capacity,
+      seatingArea: row.seating_area,
+      isAvailable: row.is_available,
+      isActive: row.is_active,
+      notes: row.notes,
+      createdAt: row.created_at,
+    }));
+  },
+
+  async toggleTableStatus(id: string, isActive: boolean): Promise<boolean> {
+    const supabase = getSupabaseServerClient();
+    if (!supabase) return false;
+
+    const { error } = await supabase
+      .from("tables")
+      .update({ is_active: isActive })
+      .eq("id", id);
+
+    if (error) {
+      console.error("[Supabase] toggleTableStatus error:", error.message);
+      return false;
+    }
+    return true;
+  },
+
+  async addTable(table: { tableNumber: string; capacity: number; seatingArea: string; notes?: string }): Promise<CafeTable | null> {
+    const supabase = getSupabaseServerClient();
+    if (!supabase) return null;
+
+    const { data, error } = await supabase
+      .from("tables")
+      .insert({
+        table_number: table.tableNumber,
+        capacity: table.capacity,
+        seating_area: table.seatingArea,
+        notes: table.notes || null,
+        is_active: true,
+        is_available: true,
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error("[Supabase] addTable error:", error?.message);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      tableNumber: data.table_number,
+      capacity: data.capacity,
+      seatingArea: data.seating_area,
+      isAvailable: data.is_available,
+      isActive: data.is_active,
+      notes: data.notes,
+      createdAt: data.created_at,
+    };
+  },
+
+  async assignTableToReservation(reservationId: string, tableId: string | null): Promise<boolean> {
+    const supabase = getSupabaseServerClient();
+    if (!supabase) return false;
+
+    const { error } = await supabase
+      .from("reservations")
+      .update({
+        table_id: tableId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", reservationId);
+
+    if (error) {
+      console.error("[Supabase] assignTableToReservation error:", error.message);
+      return false;
+    }
+    return true;
+  },
+
   // ==========================================
   // 4. BUSINESS SETTINGS
   // ==========================================
@@ -266,6 +361,38 @@ export const supabaseService = {
       isAcceptingReservations: data.is_accepting_reservations,
       maxPartySize: data.max_party_size,
     };
+  },
+
+  async updateBusinessSettings(settings: Partial<BusinessSettings>): Promise<boolean> {
+    const supabase = getSupabaseServerClient();
+    if (!supabase) return false;
+
+    const payload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (settings.shopName !== undefined) payload.shop_name = settings.shopName;
+    if (settings.tagline !== undefined) payload.tagline = settings.tagline;
+    if (settings.address !== undefined) payload.address = settings.address;
+    if (settings.city !== undefined) payload.city = settings.city;
+    if (settings.phone !== undefined) payload.phone = settings.phone;
+    if (settings.whatsapp !== undefined) payload.whatsapp = settings.whatsapp;
+    if (settings.email !== undefined) payload.email = settings.email;
+    if (settings.openingHoursWeekday !== undefined) payload.opening_hours_weekday = settings.openingHoursWeekday;
+    if (settings.openingHoursWeekend !== undefined) payload.opening_hours_weekend = settings.openingHoursWeekend;
+    if (settings.googleMapsUrl !== undefined) payload.google_maps_url = settings.googleMapsUrl;
+    if (settings.isAcceptingReservations !== undefined) payload.is_accepting_reservations = settings.isAcceptingReservations;
+    if (settings.maxPartySize !== undefined) payload.max_party_size = settings.maxPartySize;
+
+    const { error } = await supabase
+      .from("business_settings")
+      .update(payload)
+      .neq("id", "00000000-0000-0000-0000-000000000000");
+
+    if (error) {
+      console.error("[Supabase] updateBusinessSettings error:", error.message);
+      return false;
+    }
+    return true;
   },
 
   // ==========================================

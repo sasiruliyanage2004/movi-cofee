@@ -23,17 +23,30 @@ export default async function AdminPage() {
   }
 
   // Load from Supabase if configured, otherwise fallback to local platform store
-  let reservations = isSupabaseServerConfigured()
-    ? await supabaseService.getReservations()
-    : null;
+  let [reservations, tables, customers, supabaseSettings] = isSupabaseServerConfigured()
+    ? await Promise.all([
+        supabaseService.getReservations(),
+        supabaseService.getAllTables(),
+        supabaseService.getCustomers(),
+        supabaseService.getBusinessSettings(),
+      ])
+    : [null, null, null, null];
 
   if (!reservations || reservations.length === 0) {
     reservations = await dbStorage.getReservations();
   }
 
+  if (!tables || tables.length === 0) {
+    tables = await dbStorage.getAllTables();
+  }
+
+  if (!customers || customers.length === 0) {
+    customers = await dbStorage.getCustomers();
+  }
+
   const [
     inquiries,
-    settings,
+    fallbackSettings,
     seasonal,
     menuAvailability,
     analyticsSummary,
@@ -45,9 +58,13 @@ export default async function AdminPage() {
     dbStorage.getAnalyticsSummary(),
   ]);
 
+  const settings = supabaseSettings || fallbackSettings;
+
   return (
     <AdminDashboardClient
       initialReservations={reservations}
+      initialTables={tables}
+      initialCustomers={customers}
       initialInquiries={inquiries}
       initialSettings={settings}
       initialSeasonal={seasonal}
