@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle2, AlertCircle, Send } from "lucide-react";
+import { submitContactInquiryAction } from "@/actions/contact";
 
 interface FormState {
   name: string;
@@ -64,13 +65,15 @@ export const ContactForm: React.FC = () => {
 
     setIsSubmitting(true);
 
-    // Structured for future backend API / Server Action integration
     try {
-      // Simulate rapid accessible response
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setIsSuccess(true);
-      setFormData({ name: "", email: "", phone: "", message: "" });
-      setErrors({});
+      const result = await submitContactInquiryAction(formData);
+      if (result.success) {
+        setIsSuccess(true);
+        setFormData({ name: "", email: "", phone: "", message: "" });
+        setErrors({});
+      } else {
+        setErrors({ message: result.error || "Unable to submit message. Please try again or WhatsApp us." });
+      }
     } catch {
       setErrors({ message: "Unable to submit message. Please contact us directly via phone or WhatsApp." });
     } finally {

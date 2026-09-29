@@ -2,11 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/data/site";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { MobileStickyActions } from "@/components/layout/MobileStickyActions";
-import { ReadingProgressBar } from "@/components/ui/ReadingProgressBar";
-import { DeveloperConsoleBadge } from "@/components/ui/DeveloperConsoleBadge";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -75,11 +70,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+import { PublicSiteShell } from "@/components/layout/PublicSiteShell";
+import { DeveloperConsoleBadge } from "@/components/ui/DeveloperConsoleBadge";
+import { dbStorage } from "@/lib/db/storage";
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const seasonalExperience = await dbStorage.getActiveSeasonalExperience();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CafeOrCoffeeShop",
@@ -129,11 +130,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-warm-cream text-espresso selection:bg-muted-gold selection:text-espresso pb-14 lg:pb-0">
         <DeveloperConsoleBadge />
-        <ReadingProgressBar />
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <Footer />
-        <MobileStickyActions />
+        <PublicSiteShell seasonalExperience={seasonalExperience}>
+          {children}
+        </PublicSiteShell>
       </body>
     </html>
   );
