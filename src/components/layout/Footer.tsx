@@ -69,6 +69,15 @@ export const Footer: React.FC = () => {
                     </Link>
                   </li>
                 ))}
+                <li className="pt-1">
+                  <Link
+                    href="/admin"
+                    className="text-muted-gold hover:text-warm-cream transition-colors duration-200 inline-flex items-center gap-1.5 font-medium"
+                  >
+                    <Lock className="w-3 h-3 text-muted-gold" />
+                    <span>Owner Portal</span>
+                  </Link>
+                </li>
               </ul>
             </div>
 
