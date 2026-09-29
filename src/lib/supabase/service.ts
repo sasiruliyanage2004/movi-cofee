@@ -154,6 +154,28 @@ export const supabaseService = {
     return true;
   },
 
+  async checkSlotCapacity(date: string, timeSlot: string): Promise<{ bookedGuests: number; maxCapacity: number } | null> {
+    const supabase = getSupabaseServerClient();
+    if (!supabase) return null;
+
+    const maxCapacity = 24;
+
+    const { data, error } = await supabase
+      .from("reservations")
+      .select("guests_count")
+      .eq("reservation_date", date)
+      .eq("time_slot", timeSlot)
+      .in("status", ["pending", "confirmed", "seated"]);
+
+    if (error) {
+      console.error("[Supabase] checkSlotCapacity error:", error.message);
+      return null;
+    }
+
+    const bookedGuests = (data || []).reduce((sum, r) => sum + (Number(r.guests_count) || 0), 0);
+    return { bookedGuests, maxCapacity };
+  },
+
   // ==========================================
   // 2. CUSTOMERS
   // ==========================================

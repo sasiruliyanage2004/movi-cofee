@@ -150,6 +150,19 @@ export const dbStorage = {
     return res;
   },
 
+  async checkSlotCapacity(date: string, timeSlot: string): Promise<{ bookedGuests: number; maxCapacity: number }> {
+    const maxCapacity = 24;
+    const bookedGuests = db.reservations
+      .filter(
+        (r) =>
+          r.reservationDate === date &&
+          r.timeSlot === timeSlot &&
+          (r.status === "pending" || r.status === "confirmed" || r.status === "seated")
+      )
+      .reduce((sum, r) => sum + (Number(r.guestsCount) || 0), 0);
+    return { bookedGuests, maxCapacity };
+  },
+
   // Contact Inquiries
   async getInquiries(): Promise<ContactInquiry[]> {
     return [...db.inquiries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
