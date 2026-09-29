@@ -416,6 +416,7 @@ export const supabaseService = {
 
     return {
       id: data.id,
+      theme: data.theme || (data.id?.includes("christmas") ? "christmas" : "harvest"),
       title: data.title,
       tag: data.tag,
       highlightText: data.highlight_text,
@@ -425,6 +426,7 @@ export const supabaseService = {
       isActive: data.is_active,
       startDate: data.start_date,
       endDate: data.end_date,
+      visualEffect: data.visual_effect || "none",
     };
   },
 

@@ -8,6 +8,7 @@ import { MobileStickyActions } from "@/components/layout/MobileStickyActions";
 import { ReadingProgressBar } from "@/components/ui/ReadingProgressBar";
 import { CustomerSommelierModal } from "@/components/ai/CustomerSommelierModal";
 import { SeasonalBanner } from "@/components/layout/SeasonalBanner";
+import { SeasonalEffects } from "@/components/seasonal/SeasonalEffects";
 import { SeasonalExperience } from "@/types/settings";
 
 interface PublicSiteShellProps {
@@ -29,6 +30,7 @@ export const PublicSiteShell: React.FC<PublicSiteShellProps> = ({
   return (
     <>
       <SeasonalBanner experience={seasonalExperience} />
+      <SeasonalEffects experience={seasonalExperience} />
       <ReadingProgressBar />
       <Navbar />
       <main className="flex-1 flex flex-col">{children}</main>

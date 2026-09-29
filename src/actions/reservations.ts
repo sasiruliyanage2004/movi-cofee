@@ -6,6 +6,7 @@ import { isSupabaseServerConfigured } from "@/lib/supabase/server";
 import { validateReservationInput, isValidReservationStatus } from "@/lib/supabase/validation";
 import { CreateReservationInput, Reservation, ReservationStatus, SeatingArea } from "@/types/reservation";
 import { notificationService } from "@/lib/notifications/whatsapp";
+import { dispatchReservationNotification } from "@/lib/notifications/dispatcher";
 import { revalidatePath } from "next/cache";
 
 export interface ReservationActionResult {
@@ -128,17 +129,8 @@ export async function createReservationAction(input: CreateReservationInput): Pr
 
     const whatsappUrl = notificationService.generateCustomerBookingWhatsAppUrl(reservation);
 
-    // 5. Record Notification Audit
-    if (isSupabaseServerConfigured()) {
-      await supabaseService.recordNotification({
-        reservationId: reservation.id,
-        channel: "whatsapp",
-        recipient: reservation.phone,
-        title: "Reservation Received",
-        body: `Booking #${reservation.referenceNumber} for ${reservation.guestName} created.`,
-        status: "sent",
-      });
-    }
+    // 5. Dispatch Multi-Channel Notifications (Email to Customer & Admin Alert)
+    await dispatchReservationNotification("created", reservation);
 
     // 6. Track Analytics Event
     if (isSupabaseServerConfigured()) {
@@ -205,6 +197,10 @@ export async function updateReservationStatusAction(id: string, status: Reservat
     if (!updated) {
       return { success: false, error: "Reservation not found." };
     }
+
+    // Dispatch lifecycle notification (confirmed, cancelled, or updated)
+    const event = status === "confirmed" ? "confirmed" : status === "cancelled" ? "cancelled" : "updated";
+    await dispatchReservationNotification(event, updated);
 
     revalidatePath("/admin");
     return { success: true, reservation: updated };

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Reservation, ReservationStatus, SeatingArea } from "@/types/reservation";
-import { BusinessSettings, SeasonalExperience } from "@/types/settings";
+import { BusinessSettings, SeasonalExperience, SeasonalVisualEffect } from "@/types/settings";
 import { CafeTable } from "@/types/table";
 import { Customer } from "@/types/customer";
 import { ContactInquiry } from "@/lib/db/storage";
@@ -17,6 +17,7 @@ import { askOwnerAiAction } from "@/actions/ai";
 import { logoutAction } from "@/actions/auth";
 import { menuCategories } from "@/data/menu";
 import { notificationService } from "@/lib/notifications/whatsapp";
+import { calculateBusinessAnalytics } from "@/lib/analytics/businessAnalytics";
 import {
   Calendar,
   Users,
@@ -205,6 +206,10 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
         .sort((a, b) => a.reservationDate.localeCompare(b.reservationDate)),
     [reservations, todayStr]
   );
+
+  const businessAnalytics = useMemo(() => {
+    return calculateBusinessAnalytics(reservations, todayStr);
+  }, [reservations, todayStr]);
 
   // Reservation Status Workflow Handler
   const handleStatusChange = async (id: string, newStatus: ReservationStatus) => {
@@ -1887,104 +1892,226 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
         )}
 
         {/* ========================================================================================= */}
-        {/* 8. SEASONAL CAMPAIGN */}
+        {/* ========================================================================================= */}
+        {/* 8. SEASONAL CAMPAIGN SYSTEM */}
         {/* ========================================================================================= */}
         {activeTab === "seasonal" && (
-          <div className="space-y-6 max-w-2xl">
+          <div className="space-y-6 max-w-4xl">
             <div>
-              <h3 className="font-serif text-2xl text-warm-cream">Seasonal Announcement Banner</h3>
+              <h3 className="font-serif text-2xl text-warm-cream">Seasonal Experience Manager</h3>
               <p className="text-xs text-warm-cream/60 mt-1">
-                Configure the announcement bar and featured roast that appears at the top of the public website.
+                Configure centralized campaigns that automatically activate on schedule and cleanly revert to the core brand experience.
               </p>
             </div>
 
-            {seasonal.map((camp) => (
-              <div key={camp.id} className="bg-[#241914] border border-warm-cream/10 p-6 space-y-4 rounded">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono uppercase text-muted-gold font-semibold">
-                    {camp.tag}
-                  </span>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs">
-                    <input
-                      type="checkbox"
-                      checked={camp.isActive}
-                      onChange={async (e) => {
-                        const newActive = e.target.checked;
+            <div className="grid grid-cols-1 gap-5">
+              {seasonal.map((camp) => (
+                <div key={camp.id} className="bg-[#241914] border border-warm-cream/10 p-5 sm:p-6 space-y-4 rounded shadow">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-warm-cream/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-muted-gold/20 text-muted-gold border border-muted-gold/40 font-semibold">
+                        {camp.tag}
+                      </span>
+                      <span className="text-xs text-warm-cream/50 font-mono">
+                        Theme: {camp.theme || "custom"}
+                      </span>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={camp.isActive}
+                        onChange={async (e) => {
+                          const newActive = e.target.checked;
+                          setSeasonal((prev) =>
+                            prev.map((s) => (s.id === camp.id ? { ...s, isActive: newActive } : s))
+                          );
+                          await updateSeasonalExperienceAction(camp.id, { isActive: newActive });
+                          showToast(`Campaign ${newActive ? "activated" : "deactivated"} on public site`);
+                        }}
+                        className="accent-muted-gold w-4 h-4 cursor-pointer"
+                      />
+                      <span className={camp.isActive ? "text-emerald-400 font-medium" : "text-warm-cream/50"}>
+                        {camp.isActive ? "Active on Public Site" : "Inactive / Scheduled"}
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1 font-mono">
+                        Campaign Title
+                      </label>
+                      <input
+                        type="text"
+                        value={camp.title}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSeasonal((prev) =>
+                            prev.map((s) => (s.id === camp.id ? { ...s, title: val } : s))
+                          );
+                        }}
+                        className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-2 text-warm-cream focus:outline-none focus:border-muted-gold rounded"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1 font-mono">
+                        Highlight Subtext
+                      </label>
+                      <input
+                        type="text"
+                        value={camp.highlightText}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSeasonal((prev) =>
+                            prev.map((s) => (s.id === camp.id ? { ...s, highlightText: val } : s))
+                          );
+                        }}
+                        className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-2 text-warm-cream focus:outline-none focus:border-muted-gold rounded"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1 font-mono">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={camp.startDate}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSeasonal((prev) =>
+                            prev.map((s) => (s.id === camp.id ? { ...s, startDate: val } : s))
+                          );
+                        }}
+                        className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-1.5 text-warm-cream focus:outline-none focus:border-muted-gold rounded font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1 font-mono">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={camp.endDate}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSeasonal((prev) =>
+                            prev.map((s) => (s.id === camp.id ? { ...s, endDate: val } : s))
+                          );
+                        }}
+                        className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-1.5 text-warm-cream focus:outline-none focus:border-muted-gold rounded font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1 font-mono">
+                        Subtle Visual Effect
+                      </label>
+                      <select
+                        value={camp.visualEffect || "none"}
+                        onChange={(e) => {
+                          const val = e.target.value as SeasonalVisualEffect;
+                          setSeasonal((prev) =>
+                            prev.map((s) => (s.id === camp.id ? { ...s, visualEffect: val } : s))
+                          );
+                        }}
+                        className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-2 text-warm-cream focus:outline-none focus:border-muted-gold rounded"
+                      >
+                        <option value="none">None (Standard Brand)</option>
+                        <option value="snowfall">Snowfall (Christmas)</option>
+                        <option value="warm-lights">Warm Lights (Valentine/Evening)</option>
+                        <option value="golden-shimmer">Golden Shimmer (New Year)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1 font-mono">
+                      Campaign Description & Story
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={camp.description}
+                      onChange={(e) => {
+                        const val = e.target.value;
                         setSeasonal((prev) =>
-                          prev.map((s) => (s.id === camp.id ? { ...s, isActive: newActive } : s))
+                          prev.map((s) => (s.id === camp.id ? { ...s, description: val } : s))
                         );
-                        await updateSeasonalExperienceAction(camp.id, { isActive: newActive });
-                        showToast(`Seasonal announcement ${newActive ? "activated" : "deactivated"}`);
                       }}
-                      className="accent-muted-gold w-4 h-4 cursor-pointer"
+                      className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-2 text-xs text-warm-cream focus:outline-none focus:border-muted-gold rounded"
                     />
-                    <span>Active on Public Site</span>
-                  </label>
-                </div>
+                  </div>
 
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1">
-                    Campaign Title
-                  </label>
-                  <input
-                    type="text"
-                    value={camp.title}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSeasonal((prev) =>
-                        prev.map((s) => (s.id === camp.id ? { ...s, title: val } : s))
-                      );
-                    }}
-                    className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-2 text-xs text-warm-cream focus:outline-none focus:border-muted-gold rounded"
-                  />
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-warm-cream/40">
+                      Auto-activates when current date is between {camp.startDate} and {camp.endDate}.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await updateSeasonalExperienceAction(camp.id, camp);
+                        showToast(`Saved changes for ${camp.tag}`);
+                      }}
+                      className="px-4 py-1.5 bg-muted-gold text-espresso font-semibold text-xs uppercase tracking-wider cursor-pointer hover:bg-muted-gold/90 rounded transition-colors"
+                    >
+                      Save Configuration
+                    </button>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-muted-gold mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={camp.description}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSeasonal((prev) =>
-                        prev.map((s) => (s.id === camp.id ? { ...s, description: val } : s))
-                      );
-                    }}
-                    className="w-full bg-[#1B130F] border border-warm-cream/20 px-3 py-2 text-xs text-warm-cream focus:outline-none focus:border-muted-gold rounded"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await updateSeasonalExperienceAction(camp.id, camp);
-                    showToast("Seasonal campaign updated!");
-                  }}
-                  className="px-4 py-2 bg-muted-gold text-espresso font-semibold text-xs uppercase tracking-wider cursor-pointer hover:bg-muted-gold/90 rounded"
-                >
-                  Save Campaign
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
         {/* ========================================================================================= */}
-        {/* 9. AI OPS ASSISTANT */}
+        {/* 9. AI BUSINESS & OPERATIONS ASSISTANT */}
         {/* ========================================================================================= */}
         {activeTab === "ai" && (
-          <div className="space-y-6 max-w-3xl">
+          <div className="space-y-6 max-w-4xl">
             <div>
-              <h3 className="font-serif text-2xl text-warm-cream">Movi Operations AI Assistant</h3>
+              <h3 className="font-serif text-2xl text-warm-cream">Movi Business AI Assistant</h3>
               <p className="text-xs text-warm-cream/60 mt-1">
-                Executive operational insights, inventory forecasting, and guest sentiment intelligence.
+                Executive intelligence operating exclusively through controlled server-side tools. Customer privacy is strictly protected.
               </p>
             </div>
 
-            <div className="bg-[#241914] border border-warm-cream/10 flex flex-col h-[550px] rounded">
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            {/* Quick Prompt Suggestions Grid */}
+            <div className="space-y-2">
+              <span className="text-[11px] uppercase tracking-wider text-muted-gold font-mono block">
+                Executive Business Queries:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {[
+                  "How many reservations do we have today?",
+                  "How many guests are expected today?",
+                  "What are our busiest reservation times?",
+                  "How many confirmed reservations do we have this week?",
+                  "How many cancellations happened?",
+                  "Summarize this week's reservation activity.",
+                  "Show reservation trends.",
+                  "Draft a social media caption for a new menu item.",
+                  "Suggest promotional content based only on the business information provided.",
+                ].map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendAi(prompt)}
+                    className="text-left p-2.5 bg-[#241914] hover:bg-[#2D1F19] border border-warm-cream/10 hover:border-muted-gold/50 text-[11px] text-warm-cream/80 hover:text-warm-cream rounded transition-colors cursor-pointer"
+                  >
+                    <span>{prompt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Chat Conversation Console */}
+            <div className="bg-[#241914] border border-warm-cream/10 flex flex-col h-[550px] rounded shadow-xl overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 font-sans text-xs">
                 {aiChat.map((msg, i) => (
                   <div
                     key={i}
@@ -1993,10 +2120,10 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                     }`}
                   >
                     <div
-                      className={`max-w-[85%] p-4 text-xs sm:text-sm leading-relaxed rounded-xl ${
+                      className={`max-w-[88%] p-4 text-xs sm:text-sm leading-relaxed rounded-xl ${
                         msg.role === "user"
-                          ? "bg-muted-gold text-espresso font-medium"
-                          : "bg-[#1A120E] text-warm-cream border border-warm-cream/10"
+                          ? "bg-muted-gold text-espresso font-medium rounded-tr-none"
+                          : "bg-[#1A120E] text-warm-cream border border-warm-cream/10 rounded-tl-none"
                       }`}
                     >
                       <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -2019,8 +2146,9 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                   </div>
                 ))}
                 {isAiLoading && (
-                  <div className="text-xs text-muted-gold italic p-3">
-                    Analyzing operations data...
+                  <div className="text-xs text-muted-gold italic p-3 flex items-center gap-2 bg-[#1A120E] border border-warm-cream/10 rounded-xl w-fit">
+                    <Coffee className="w-3.5 h-3.5 animate-spin" />
+                    <span>Executing controlled analytics tools...</span>
                   </div>
                 )}
               </div>
@@ -2035,14 +2163,15 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                 <input
                   type="text"
                   value={aiQuery}
+                  disabled={isAiLoading}
                   onChange={(e) => setAiQuery(e.target.value)}
-                  placeholder="Ask about table scheduling, peak hours, promo ideas..."
+                  placeholder="Ask about peak hours, today's arrivals, or drafting social captions..."
                   className="flex-1 bg-[#150E0B] border border-warm-cream/20 px-3.5 py-2 text-xs text-warm-cream focus:outline-none focus:border-muted-gold rounded"
                 />
                 <button
                   type="submit"
                   disabled={!aiQuery.trim() || isAiLoading}
-                  className="px-4 py-2 bg-muted-gold text-espresso text-xs font-semibold uppercase tracking-wider disabled:opacity-40 cursor-pointer rounded"
+                  className="px-5 py-2 bg-muted-gold text-espresso text-xs font-semibold uppercase tracking-wider disabled:opacity-40 cursor-pointer rounded hover:bg-muted-gold/90 transition-colors"
                 >
                   <Send className="w-3.5 h-3.5 inline mr-1" />
                   Ask AI
@@ -2053,59 +2182,248 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
         )}
 
         {/* ========================================================================================= */}
-        {/* 10. ANALYTICS */}
+        {/* 10. REAL DATABASE BUSINESS ANALYTICS */}
         {/* ========================================================================================= */}
         {activeTab === "analytics" && (
           <div className="space-y-6">
-            <h3 className="font-serif text-2xl text-warm-cream">Platform Privacy Analytics</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-[#241914] p-5 border border-warm-cream/10 rounded">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-warm-cream/10 pb-4">
+              <div>
+                <h3 className="font-serif text-2xl sm:text-3xl text-warm-cream">Business Analytics Hub</h3>
+                <p className="text-xs text-warm-cream/60 mt-1">
+                  Computed directly from actual database reservations. Privacy safe with zero fabricated statistics.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-muted-gold bg-muted-gold/10 px-2.5 py-1 rounded border border-muted-gold/30">
+                Live Data Verified
+              </span>
+            </div>
+
+            {/* Core Analytics KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
+              <div className="bg-[#241914] p-4 border border-warm-cream/10 rounded">
                 <span className="text-[10px] uppercase tracking-widest text-muted-gold block font-mono">
-                  Tracked Page Views
+                  Total Bookings
                 </span>
                 <span className="font-serif text-3xl text-warm-cream mt-1 block">
-                  {analyticsSummary.totalPageViews + 148}
+                  {businessAnalytics.overview.totalReservations}
                 </span>
+                <span className="text-[10px] text-warm-cream/40 mt-0.5 block">Lifetime recorded</span>
               </div>
-              <div className="bg-[#241914] p-5 border border-warm-cream/10 rounded">
+
+              <div className="bg-[#241914] p-4 border border-warm-cream/10 rounded">
                 <span className="text-[10px] uppercase tracking-widest text-emerald-400 block font-mono">
-                  Completed Reservations
+                  Confirmed Bookings
                 </span>
-                <span className="font-serif text-3xl text-warm-cream mt-1 block">
-                  {reservations.length}
+                <span className="font-serif text-3xl text-emerald-400 mt-1 block">
+                  {businessAnalytics.overview.confirmedCount}
+                </span>
+                <span className="text-[10px] text-emerald-400/60 mt-0.5 block">
+                  {businessAnalytics.overview.confirmationRate}% fulfillment rate
                 </span>
               </div>
-              <div className="bg-[#241914] p-5 border border-warm-cream/10 rounded">
+
+              <div className="bg-[#241914] p-4 border border-warm-cream/10 rounded">
+                <span className="text-[10px] uppercase tracking-widest text-red-400 block font-mono">
+                  Cancelled
+                </span>
+                <span className="font-serif text-3xl text-red-400 mt-1 block">
+                  {businessAnalytics.overview.cancelledCount}
+                </span>
+                <span className="text-[10px] text-red-400/60 mt-0.5 block">
+                  {businessAnalytics.overview.cancellationRate}% cancellation rate
+                </span>
+              </div>
+
+              <div className="bg-[#241914] p-4 border border-warm-cream/10 rounded">
+                <span className="text-[10px] uppercase tracking-widest text-orange-400 block font-mono">
+                  No-Shows
+                </span>
+                <span className="font-serif text-3xl text-orange-400 mt-1 block">
+                  {businessAnalytics.overview.noShowCount}
+                </span>
+                <span className="text-[10px] text-warm-cream/40 mt-0.5 block">Unfulfilled tables</span>
+              </div>
+
+              <div className="bg-[#241914] p-4 border border-warm-cream/10 rounded">
                 <span className="text-[10px] uppercase tracking-widest text-sky-400 block font-mono">
-                  Top Trending Item
+                  Total Guests Handled
                 </span>
-                <span className="font-serif text-xl text-warm-cream mt-2 block">
-                  {analyticsSummary.popularItems[0]?.name || "Iced Spanish Latte"}
+                <span className="font-serif text-3xl text-sky-400 mt-1 block">
+                  {businessAnalytics.overview.totalGuests}
                 </span>
+                <span className="text-[10px] text-warm-cream/40 mt-0.5 block">Non-cancelled guests</span>
+              </div>
+
+              <div className="bg-[#241914] p-4 border border-warm-cream/10 rounded">
+                <span className="text-[10px] uppercase tracking-widest text-muted-coffee block font-mono">
+                  Avg Party Size
+                </span>
+                <span className="font-serif text-3xl text-warm-cream mt-1 block">
+                  {businessAnalytics.overview.averagePartySize}
+                </span>
+                <span className="text-[10px] text-warm-cream/40 mt-0.5 block">Guests per table</span>
               </div>
             </div>
 
-            <div className="bg-[#241914] border border-warm-cream/10 p-5 rounded">
-              <h4 className="font-serif text-lg text-warm-cream mb-4">Recent Platform Events</h4>
-              <div className="space-y-2 text-xs">
-                {analyticsSummary.recentEvents.length === 0 ? (
-                  <p className="text-warm-cream/40 italic">Activity stream will populate as guests interact.</p>
-                ) : (
-                  analyticsSummary.recentEvents.map((evt) => (
-                    <div
-                      key={evt.id}
-                      className="flex items-center justify-between p-2.5 bg-[#1B130F] border border-warm-cream/5 rounded"
-                    >
-                      <span className="text-muted-gold uppercase tracking-wider font-mono">{evt.type}</span>
-                      <span className="text-warm-cream/70">{evt.path}</span>
-                      <span className="text-[10px] text-warm-cream/40">
-                        {new Date(evt.timestamp).toLocaleTimeString()}
-                      </span>
+            {/* Daily Trends & Status Breakdown (Split 2-Cols) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Daily Reservation Trends (2 Cols) */}
+              <div className="lg:col-span-2 bg-[#241914] border border-warm-cream/10 p-5 rounded space-y-4">
+                <div className="flex items-center justify-between border-b border-warm-cream/10 pb-2.5">
+                  <h4 className="font-serif text-lg text-warm-cream">Daily Reservation Trends (Last 7 Days)</h4>
+                  <span className="text-xs font-mono text-muted-gold">Volume & Capacity</span>
+                </div>
+
+                <div className="grid grid-cols-7 gap-2 pt-4">
+                  {businessAnalytics.dailyTrends.map((d) => {
+                    const maxBar = Math.max(1, ...businessAnalytics.dailyTrends.map((t) => t.bookings));
+                    const heightPercent = Math.min(100, Math.max(15, (d.bookings / maxBar) * 100));
+                    return (
+                      <div key={d.date} className="flex flex-col items-center gap-2">
+                        <span className="text-[10px] font-mono text-warm-cream font-bold">
+                          {d.bookings}
+                        </span>
+                        <div className="w-full bg-[#1B130F] h-32 rounded flex flex-col justify-end p-1 border border-warm-cream/5">
+                          <div
+                            className="w-full bg-muted-gold rounded-sm transition-all"
+                            style={{ height: `${heightPercent}%` }}
+                            title={`${d.dayLabel}: ${d.bookings} bookings, ${d.guests} guests`}
+                          />
+                        </div>
+                        <span className="text-[10px] text-warm-cream/60 truncate text-center">
+                          {d.dayLabel.split(",")[0]}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Status Distribution */}
+              <div className="bg-[#241914] border border-warm-cream/10 p-5 rounded space-y-4">
+                <div className="flex items-center justify-between border-b border-warm-cream/10 pb-2.5">
+                  <h4 className="font-serif text-lg text-warm-cream">Status Breakdown</h4>
+                  <span className="text-xs font-mono text-muted-gold">{businessAnalytics.overview.totalReservations} Total</span>
+                </div>
+
+                <div className="space-y-3 pt-1 text-xs">
+                  {businessAnalytics.statusBreakdown.map((st) => (
+                    <div key={st.status} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-warm-cream font-medium">{st.label}</span>
+                        <span className="font-mono text-warm-cream/70">
+                          {st.count} ({st.percentage}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#18110E] h-2 rounded overflow-hidden">
+                        <div
+                          className="h-full rounded"
+                          style={{
+                            width: `${st.percentage}%`,
+                            backgroundColor: st.color,
+                          }}
+                        />
+                      </div>
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
               </div>
             </div>
+
+            {/* Busiest Time Periods & Seating Area Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Busiest Time Periods */}
+              <div className="bg-[#241914] border border-warm-cream/10 p-5 rounded space-y-4">
+                <div className="flex items-center justify-between border-b border-warm-cream/10 pb-2.5">
+                  <h4 className="font-serif text-lg text-warm-cream">Busiest Time Periods</h4>
+                  <span className="text-xs font-mono text-muted-gold">Slot Demand Heatmap</span>
+                </div>
+
+                <div className="space-y-2.5 text-xs">
+                  {businessAnalytics.busiestTimeSlots.map((slot) => (
+                    <div
+                      key={slot.timeSlot}
+                      className="p-3 bg-[#1B130F] border border-warm-cream/5 rounded flex items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-muted-gold" />
+                        <span className="font-mono font-semibold text-warm-cream">{slot.timeSlot}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-warm-cream/70">{slot.totalGuests} Guests</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-muted-gold/20 text-muted-gold border border-muted-gold/30">
+                          {slot.count} Bookings
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Seating Area Popularity */}
+              <div className="bg-[#241914] border border-warm-cream/10 p-5 rounded space-y-4">
+                <div className="flex items-center justify-between border-b border-warm-cream/10 pb-2.5">
+                  <h4 className="font-serif text-lg text-warm-cream">Seating Area Preferences</h4>
+                  <span className="text-xs font-mono text-muted-gold">Customer Allocation</span>
+                </div>
+
+                <div className="space-y-3 pt-2 text-xs">
+                  {businessAnalytics.seatingAreaDistribution.map((area) => (
+                    <div key={area.area} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-warm-cream font-medium">{area.area}</span>
+                        <span className="font-mono text-muted-gold">
+                          {area.count} Bookings ({area.percentage}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#18110E] h-2.5 rounded overflow-hidden">
+                        <div
+                          className="h-full bg-muted-gold rounded"
+                          style={{ width: `${area.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Digital Engagement & Menu Interest */}
+            {analyticsSummary && (
+              <div className="bg-[#241914] border border-warm-cream/10 p-5 rounded space-y-4">
+                <div className="flex items-center justify-between border-b border-warm-cream/10 pb-2.5">
+                  <h4 className="font-serif text-lg text-warm-cream">Digital Traffic & Menu Discoveries</h4>
+                  <span className="text-xs font-mono text-muted-gold">Storefront Analytics</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                  <div className="p-4 bg-[#1B130F] border border-warm-cream/5 rounded">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-gold font-mono block">Website Page Views</span>
+                    <span className="font-serif text-2xl text-warm-cream mt-1 block">{analyticsSummary.totalPageViews}</span>
+                    <span className="text-[10px] text-warm-cream/50 mt-0.5 block">Storefront engagement</span>
+                  </div>
+                  <div className="p-4 bg-[#1B130F] border border-warm-cream/5 rounded">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-gold font-mono block">Online Booking Inquiries</span>
+                    <span className="font-serif text-2xl text-warm-cream mt-1 block">{analyticsSummary.totalBookings}</span>
+                    <span className="text-[10px] text-warm-cream/50 mt-0.5 block">Web reservations initiated</span>
+                  </div>
+                  <div className="p-4 bg-[#1B130F] border border-warm-cream/5 rounded sm:col-span-2 lg:col-span-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-gold font-mono block mb-2">Top Viewed Menu Items</span>
+                    <div className="space-y-1.5 text-xs">
+                      {analyticsSummary.popularItems && analyticsSummary.popularItems.length > 0 ? (
+                        analyticsSummary.popularItems.slice(0, 3).map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-warm-cream/80">
+                            <span className="truncate">{item.name}</span>
+                            <span className="font-mono text-muted-gold font-medium">{item.views} views</span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-warm-cream/40 italic">Activity registering...</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

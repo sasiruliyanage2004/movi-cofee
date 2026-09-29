@@ -14,9 +14,7 @@ import {
   ArrowLeft,
   Hash,
   Sparkles,
-  MapPin,
   Check,
-  CalendarPlus,
   Loader2
 } from "lucide-react";
 import { SeatingArea, Reservation } from "@/types/reservation";

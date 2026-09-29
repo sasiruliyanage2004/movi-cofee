@@ -105,3 +105,20 @@ h1, h2, h3, h4, .font-editorial {
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes snowfall {
+  0% {
+    transform: translateY(-10px) translateX(0);
+  }
+  50% {
+    transform: translateY(50vh) translateX(10px);
+  }
+  100% {
+    transform: translateY(105vh) translateX(-6px);
+  }
+}
+
+.animate-snowfall {
+  animation-name: snowfall;
+}
+

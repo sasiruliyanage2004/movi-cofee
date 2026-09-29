@@ -1,4 +1,3 @@
-import { menuCategories } from "@/data/menu";
 import { siteConfig } from "@/data/site";
 import { ChatMessage } from "@/types/ai";
 
@@ -8,7 +7,7 @@ Your personality is warm, artisanal, deeply knowledgeable about coffee roasts, e
 You speak with elegant hospitality.
 `;
 
-export async function processCustomerSommelierMessage(userQuery: string, history: ChatMessage[] = []): Promise<ChatMessage> {
+export async function processCustomerSommelierMessage(userQuery: string): Promise<ChatMessage> {
   const query = userQuery.toLowerCase();
 
   // If Gemini API Key is available in environment, it will integrate here seamlessly.

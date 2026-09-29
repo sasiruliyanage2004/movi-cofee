@@ -4,6 +4,7 @@ import { AnalyticsEvent } from "@/types/analytics";
 import { CafeTable } from "@/types/table";
 import { Customer } from "@/types/customer";
 import { siteConfig } from "@/data/site";
+import { seasonalExperiencesCatalog, resolveActiveSeasonalExperience } from "@/data/seasonal";
 
 export interface ContactInquiry {
   id: string;
@@ -29,7 +30,6 @@ interface PlatformDatabase {
 
 // Global reference to persist across Fast Refresh in development
 declare global {
-  // eslint-disable-next-line no-var
   var __movi_db__: PlatformDatabase | undefined;
 }
 
@@ -127,20 +127,7 @@ const initialDatabase: PlatformDatabase = {
     isAcceptingReservations: true,
     maxPartySize: 12,
   },
-  seasonal: [
-    {
-      id: "season-001",
-      title: "Ceylon Cinnamon & Hazelnut Roast",
-      tag: "HARVEST SPECIAL",
-      highlightText: "LIMITED SINGLE-ORIGIN RELEASE",
-      description: "Carefully roasted with artisan Sri Lankan highland beans, notes of toasted hazelnut, organic cinnamon bark, and panela.",
-      ctaLabel: "EXPLORE COFFEE",
-      ctaHref: "/menu",
-      isActive: true,
-      startDate: "2026-09-01",
-      endDate: "2026-11-30",
-    },
-  ],
+  seasonal: [...seasonalExperiencesCatalog],
   analytics: [],
   menuAvailability: {},
 };
@@ -235,12 +222,7 @@ export const dbStorage = {
   },
 
   async getActiveSeasonalExperience(): Promise<SeasonalExperience | null> {
-    const now = new Date().toISOString().split("T")[0];
-    return (
-      db.seasonal.find(
-        (s) => s.isActive && s.startDate <= now && s.endDate >= now
-      ) || null
-    );
+    return resolveActiveSeasonalExperience(db.seasonal);
   },
 
   async updateSeasonalExperience(id: string, updates: Partial<SeasonalExperience>): Promise<SeasonalExperience | null> {
