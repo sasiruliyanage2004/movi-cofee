@@ -283,7 +283,7 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
             {/* Filter and Search Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#211713] p-4 border border-warm-cream/10">
               <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
-                {(["all", "pending", "confirmed", "seated", "completed", "cancelled"] as const).map((st) => (
+                {(["all", "pending", "confirmed", "seated", "completed", "cancelled", "no_show"] as const).map((st) => (
                   <button
                     key={st}
                     type="button"
@@ -294,7 +294,7 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                         : "bg-warm-cream/5 text-warm-cream/70 hover:text-warm-cream"
                     }`}
                   >
-                    {st}
+                    {st === "no_show" ? "No Show" : st}
                   </button>
                 ))}
               </div>
@@ -375,10 +375,12 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                                   ? "bg-sky-950 text-sky-300 border border-sky-800"
                                   : res.status === "completed"
                                   ? "bg-stone-800 text-stone-300"
+                                  : res.status === "no_show"
+                                  ? "bg-orange-950 text-orange-300 border border-orange-800"
                                   : "bg-red-950 text-red-300 border border-red-800"
                               }`}
                             >
-                              {res.status}
+                              {res.status === "no_show" ? "no show" : res.status}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 text-right space-x-2">
@@ -402,7 +404,18 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                               </button>
                             )}
 
-                            {res.status !== "completed" && res.status !== "cancelled" && (
+                            {(res.status === "confirmed" || res.status === "pending") && (
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(res.id, "no_show")}
+                                className="px-2 py-1 bg-orange-950/60 hover:bg-orange-900 text-orange-300 border border-orange-800 text-[10px] uppercase tracking-wider rounded cursor-pointer"
+                                title="Mark as No Show"
+                              >
+                                No Show
+                              </button>
+                            )}
+
+                            {res.status !== "completed" && res.status !== "cancelled" && res.status !== "no_show" && (
                               <button
                                 type="button"
                                 onClick={() => handleStatusChange(res.id, "completed")}

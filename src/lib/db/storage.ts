@@ -132,6 +132,7 @@ export const dbStorage = {
     const newReservation: Reservation = {
       id: `res-${Date.now()}-${randomDigits}`,
       referenceNumber,
+      seatingArea: input.seatingArea || "any",
       ...input,
       status: "pending",
       createdAt: new Date().toISOString(),
