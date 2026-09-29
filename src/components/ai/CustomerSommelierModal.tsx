@@ -1,47 +1,73 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Sparkles, Send, Coffee, Bot, User, ArrowRight } from "lucide-react";
-import { ChatMessage } from "@/types/ai";
-import { askSommelierAction } from "@/actions/ai";
+import {
+  X,
+  Send,
+  Coffee,
+  Bot,
+  ArrowRight,
+  MapPin,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
+  MessageCircle,
+  Minimize2,
+  ChevronDown,
+} from "lucide-react";
+import { ChatMessage, ChatActionCard } from "@/types/ai";
+import { askCustomerAssistantAction } from "@/actions/ai";
+
+let msgIdCounter = 0;
+const getNextId = (prefix: string) => `${prefix}-${++msgIdCounter}`;
 
 export const CustomerSommelierModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [lastQuery, setLastQuery] = useState("");
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: "initial-1",
+      id: "initial-welcome",
       role: "assistant",
       content:
-        "Greetings! I am your **Movi Digital Sommelier & Barista**. Whether you are looking for a bright pour-over, a velvety iced latte, or pastry pairings in Kaduwela, ask me anything!",
-      timestamp: new Date().toISOString(),
+        "Welcome to **Movi Coffee** in Kaduwela. I am your **AI Concierge & Barista Guide**.\n\nI can help with our specialty coffee menu, opening hours, directions, dietary choices, or checking real-time table availability. How may I assist you today?",
+      timestamp: "2026-09-30T00:00:00.000Z",
       suggestions: [
-        "What is your best iced coffee?",
-        "Recommend a low-acidity brew",
-        "Which pastry pairs with Flat White?",
-        "Can I book a quiet work table?",
+        "What are your opening hours?",
+        "Recommend an iced coffee",
+        "Check table availability",
+        "Do you have oat milk?",
+        "Where are you located in Kaduwela?",
       ],
     },
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isMinimized) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      inputRef.current?.focus();
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isMinimized, isThinking]);
 
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || input;
     if (!query.trim() || isThinking) return;
 
+    setHasError(false);
+    setLastQuery(query.trim());
+
     const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: getNextId("user"),
       role: "user",
       content: query.trim(),
-      timestamp: new Date().toISOString(),
+      timestamp: "now",
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -49,28 +75,35 @@ export const CustomerSommelierModal: React.FC = () => {
     setIsThinking(true);
 
     try {
-      const result = await askSommelierAction(query.trim(), messages);
+      const result = await askCustomerAssistantAction(query.trim(), messages);
       if (result.success && result.message) {
         setMessages((prev) => [...prev, result.message!]);
       } else {
+        setHasError(true);
         setMessages((prev) => [
           ...prev,
           {
-            id: `err-${Date.now()}`,
+            id: getNextId("err"),
             role: "assistant",
-            content: "My apologies, I had a brief moment of distraction while pulling an espresso shot. Please ask again!",
-            timestamp: new Date().toISOString(),
+            content:
+              result.error ||
+              "I had a brief moment of interruption while consulting our bar schedule. Please try again, or connect directly with our baristas on WhatsApp.",
+            timestamp: "now",
+            suggestions: ["Retry question", "Opening hours", "Message on WhatsApp"],
           },
         ]);
       }
     } catch {
+      setHasError(true);
       setMessages((prev) => [
         ...prev,
         {
-          id: `err-${Date.now()}`,
+          id: getNextId("err"),
           role: "assistant",
-          content: "I am momentarily unavailable. Please check our Menu page or visit our baristas in Kaduwela!",
-          timestamp: new Date().toISOString(),
+          content:
+            "I am momentarily experiencing a connection delay. Please feel free to retry or contact us directly on WhatsApp for immediate assistance.",
+          timestamp: "now",
+          suggestions: ["Retry question", "Message on WhatsApp", "View Menu"],
         },
       ]);
     } finally {
@@ -78,144 +111,390 @@ export const CustomerSommelierModal: React.FC = () => {
     }
   };
 
+  const handleRetry = () => {
+    if (lastQuery) {
+      handleSendMessage(lastQuery);
+    }
+  };
+
+  // Render Action Cards generated by controlled tools
+  const renderActionCard = (card: ChatActionCard) => {
+    if (card.type === "availability") {
+      const data = card.data as {
+        date?: string;
+        timeSlot?: string;
+        guests?: number;
+        available?: boolean;
+      };
+      return (
+        <div className="mt-3 p-3 bg-[#19110E] border border-muted-gold/30 rounded-xl space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-muted-gold">
+              Table Availability
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase font-mono ${
+                data.available
+                  ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                  : "bg-red-950 text-red-300 border border-red-800"
+              }`}
+            >
+              {data.available ? "Available" : "Fully Booked"}
+            </span>
+          </div>
+          <div className="text-xs text-warm-cream flex items-center justify-between">
+            <span>
+              {data.date} at {data.timeSlot}
+            </span>
+            <span className="font-semibold text-muted-gold">{data.guests} Guests</span>
+          </div>
+          {data.available && (
+            <button
+              type="button"
+              onClick={() =>
+                handleSendMessage(
+                  `Please book this table for ${data.guests} guests on ${data.date} at ${data.timeSlot}. My name is [Your Name] and phone is [Your Phone]`
+                )
+              }
+              className="w-full mt-1.5 py-1.5 bg-muted-gold text-espresso text-xs font-semibold uppercase tracking-wider rounded hover:bg-muted-gold/90 transition-colors cursor-pointer"
+            >
+              Quick Book This Slot →
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    if (card.type === "booking_created") {
+      const data = card.data as {
+        referenceNumber?: string;
+        guestName?: string;
+        date?: string;
+        timeSlot?: string;
+        guestsCount?: number;
+        whatsappUrl?: string;
+      };
+      return (
+        <div className="mt-3 p-3.5 bg-emerald-950/40 border border-emerald-700/60 rounded-xl space-y-2">
+          <div className="flex items-center gap-2 text-emerald-300">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span className="font-mono text-xs font-bold uppercase tracking-wider">
+              Booking Confirmed #{data.referenceNumber}
+            </span>
+          </div>
+          <div className="text-xs text-warm-cream/90 space-y-0.5">
+            <div>Guest: <strong>{data.guestName}</strong></div>
+            <div>Date & Time: <strong>{data.date} at {data.timeSlot}</strong></div>
+            <div>Party: <strong>{data.guestsCount} Guests</strong></div>
+          </div>
+          {data.whatsappUrl && (
+            <a
+              href={data.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-200 text-xs font-semibold uppercase tracking-wider rounded transition-colors"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>WhatsApp Confirmation</span>
+            </a>
+          )}
+        </div>
+      );
+    }
+
+    if (card.type === "menu_items") {
+      const data = card.data as {
+        items?: Array<{ name: string; price: string; description: string; tags?: string[] }>;
+      };
+      if (!data.items?.length) return null;
+      return (
+        <div className="mt-3 space-y-2">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-muted-gold block">
+            {card.title || "Menu Selections"}
+          </span>
+          <div className="grid grid-cols-1 gap-2">
+            {data.items.slice(0, 3).map((item, idx) => (
+              <div
+                key={idx}
+                className="p-2.5 bg-[#19110E] border border-warm-cream/10 rounded-lg flex items-start justify-between gap-2"
+              >
+                <div>
+                  <div className="text-xs font-semibold text-warm-cream">{item.name}</div>
+                  <div className="text-[11px] text-warm-cream/60 leading-snug line-clamp-2 mt-0.5">
+                    {item.description}
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-bold text-muted-gold whitespace-nowrap">
+                  {item.price}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (card.type === "contact_info") {
+      const data = card.data as {
+        address?: string;
+        city?: string;
+        phone?: string;
+        whatsapp?: string;
+        googleMapsUrl?: string;
+      };
+      return (
+        <div className="mt-3 p-3 bg-[#19110E] border border-warm-cream/10 rounded-xl space-y-2 text-xs">
+          {data.address && (
+            <div className="flex items-start gap-2 text-warm-cream/80">
+              <MapPin className="w-3.5 h-3.5 text-muted-gold flex-shrink-0 mt-0.5" />
+              <span>{data.address}, {data.city}</span>
+            </div>
+          )}
+          {data.googleMapsUrl && (
+            <a
+              href={data.googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-muted-gold hover:underline inline-block"
+            >
+              View on Google Maps ↗
+            </a>
+          )}
+        </div>
+      );
+    }
+
+    if (card.type === "reservation_status") {
+      const data = card.data as {
+        referenceNumber?: string;
+        guestName?: string;
+        status?: string;
+        reservationDate?: string;
+        timeSlot?: string;
+        guestsCount?: number;
+      };
+      return (
+        <div className="mt-3 p-3 bg-[#19110E] border border-muted-gold/30 rounded-xl space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-muted-gold font-bold">#{data.referenceNumber}</span>
+            <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 text-[10px] uppercase font-mono font-semibold rounded border border-emerald-800">
+              {data.status}
+            </span>
+          </div>
+          <div className="text-warm-cream font-medium">{data.guestName}</div>
+          <div className="text-[11px] text-warm-cream/60">
+            {data.reservationDate} at {data.timeSlot} • {data.guestsCount} Guests
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <>
-      {/* Floating Pill Trigger */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-5 z-40 lg:bottom-6 lg:right-6 flex items-center gap-2 px-4 py-2.5 bg-espresso/95 hover:bg-espresso text-warm-cream border border-muted-gold/40 hover:border-muted-gold rounded-full shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer backdrop-blur-md"
-        aria-label="Open Coffee Sommelier AI"
-      >
-        <span className="w-2 h-2 rounded-full bg-muted-gold animate-pulse" />
-        <Sparkles className="w-3.5 h-3.5 text-muted-gold" />
-        <span className="font-sans text-xs tracking-wider uppercase font-medium">
-          Ask Barista AI
-        </span>
-      </button>
+      {/* Discreet Luxury Floating Pill Launcher */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2.5 px-4 py-2.5 bg-espresso text-warm-cream border border-muted-gold/40 hover:border-muted-gold rounded-full shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer backdrop-blur-md group"
+          aria-label="Ask Movi AI Concierge"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted-gold opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-muted-gold" />
+          </span>
+          <Coffee className="w-4 h-4 text-muted-gold group-hover:rotate-12 transition-transform" />
+          <span className="font-sans text-xs tracking-wider uppercase font-semibold text-warm-cream">
+            Ask Movi AI
+          </span>
+        </button>
+      )}
 
-      {/* Modal Dialog */}
+      {/* Floating Chat Concierge Window */}
       {isOpen && (
         <div
           role="dialog"
-          aria-modal="true"
-          aria-label="Movi Coffee Sommelier"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-espresso/80 backdrop-blur-sm"
+          aria-modal="false"
+          aria-label="Movi AI Concierge"
+          className={`fixed z-50 transition-all duration-300 ${
+            isMinimized
+              ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-72 h-14"
+              : "fixed inset-x-3 bottom-20 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[410px] h-[580px] max-h-[82vh]"
+          }`}
         >
-          <div className="relative w-full max-w-lg h-[600px] max-h-[92vh] flex flex-col bg-warm-cream border border-espresso/20 shadow-2xl overflow-hidden">
+          <div className="w-full h-full flex flex-col bg-[#1D1410] border border-muted-gold/30 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
             {/* Header */}
-            <div className="px-6 py-4 bg-espresso text-warm-cream flex items-center justify-between border-b border-muted-gold/30">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-muted-gold/20 flex items-center justify-center text-muted-gold border border-muted-gold/40">
+            <div className="px-4 py-3 bg-[#150E0B] text-warm-cream flex items-center justify-between border-b border-muted-gold/20 select-none">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-muted-gold/20 flex items-center justify-center text-muted-gold border border-muted-gold/40">
                   <Coffee className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg text-warm-cream leading-tight">
-                    Movi Barista Sommelier
-                  </h3>
-                  <span className="font-sans text-[10px] uppercase tracking-widest text-muted-gold">
-                    AI Palate Guide • Kaduwela
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-serif text-sm font-semibold text-warm-cream leading-tight">
+                      Movi Concierge
+                    </h3>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  </div>
+                  <span className="font-sans text-[10px] uppercase tracking-wider text-muted-gold/80 block">
+                    Kaduwela Specialty Guide
                   </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 text-warm-cream/60 hover:text-warm-cream cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Messages Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 font-sans text-sm">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${
-                    msg.role === "user" ? "items-end" : "items-start"
-                  }`}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsMinimized(!isMinimized)}
+                  className="p-1.5 text-warm-cream/50 hover:text-warm-cream transition-colors cursor-pointer rounded"
+                  title={isMinimized ? "Expand" : "Minimize"}
+                  aria-label={isMinimized ? "Expand" : "Minimize"}
                 >
-                  <div
-                    className={`max-w-[85%] p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-espresso text-warm-cream rounded-tr-none rounded-2xl"
-                        : "bg-soft-beige/50 text-espresso border border-espresso/15 rounded-tl-none rounded-2xl"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wider text-muted-coffee font-medium">
-                      {msg.role === "user" ? (
-                        <>
-                          <span>You</span>
-                          <User className="w-3 h-3 text-warm-cream/50" />
-                        </>
-                      ) : (
-                        <>
-                          <Bot className="w-3 h-3 text-muted-gold" />
-                          <span className="text-muted-gold">Movi Sommelier</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
-
-                    {msg.suggestions && msg.suggestions.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-espresso/10 flex flex-wrap gap-1.5">
-                        {msg.suggestions.map((suggestion, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => handleSendMessage(suggestion)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-cream/80 hover:bg-warm-cream border border-espresso/20 text-[11px] text-espresso rounded-full transition-colors cursor-pointer"
-                          >
-                            <span>{suggestion}</span>
-                            <ArrowRight className="w-2.5 h-2.5 text-muted-gold" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {isThinking && (
-                <div className="flex items-center gap-2 text-xs text-espresso/60 italic p-3 bg-soft-beige/30 rounded-2xl w-fit">
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-gold animate-bounce" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-gold animate-bounce [animation-delay:0.2s]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-gold animate-bounce [animation-delay:0.4s]" />
-                  <span>Brewing recommendation...</span>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+                  {isMinimized ? <ChevronDown className="w-4 h-4 rotate-180" /> : <Minimize2 className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsMinimized(false);
+                  }}
+                  className="p-1.5 text-warm-cream/50 hover:text-warm-cream transition-colors cursor-pointer rounded"
+                  title="Close Assistant"
+                  aria-label="Close Assistant"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            {/* Input Bar */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              className="p-3 sm:p-4 bg-warm-cream border-t border-espresso/15 flex items-center gap-2"
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about roast notes, pairings, seating..."
-                className="flex-1 bg-soft-beige/40 border border-espresso/20 px-3.5 py-2.5 text-xs sm:text-sm text-espresso placeholder:text-espresso/40 focus:outline-none focus:border-espresso font-sans"
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || isThinking}
-                className="p-2.5 bg-espresso text-warm-cream hover:bg-espresso/90 disabled:opacity-40 transition-colors cursor-pointer"
-                aria-label="Send"
-              >
-                <Send className="w-4 h-4 text-muted-gold" />
-              </button>
-            </form>
+            {/* If Minimized, don't render body */}
+            {!isMinimized && (
+              <>
+                {/* Messages Body */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3.5 font-sans text-xs scrollbar-thin">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${
+                        msg.role === "user" ? "items-end" : "items-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[88%] p-3.5 rounded-2xl leading-relaxed shadow-sm ${
+                          msg.role === "user"
+                            ? "bg-muted-gold text-espresso font-medium rounded-tr-none"
+                            : "bg-[#241914] text-warm-cream border border-warm-cream/10 rounded-tl-none"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wider font-mono">
+                          {msg.role === "user" ? (
+                            <span className="text-espresso/70 font-bold">You</span>
+                          ) : (
+                            <span className="text-muted-gold font-bold flex items-center gap-1">
+                              <Bot className="w-3 h-3" />
+                              Movi Concierge
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="whitespace-pre-wrap">{msg.content}</div>
+
+                        {/* Render rich action card if present */}
+                        {msg.card && renderActionCard(msg.card)}
+
+                        {/* Suggested question chips */}
+                        {msg.suggestions && msg.suggestions.length > 0 && (
+                          <div className="mt-3 pt-2.5 border-t border-warm-cream/10 flex flex-wrap gap-1.5">
+                            {msg.suggestions.map((sug, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  if (sug === "Retry question") {
+                                    handleRetry();
+                                  } else if (sug === "Message on WhatsApp") {
+                                    window.open(`https://wa.me/94770000000?text=${encodeURIComponent("Hello Movi Coffee! I would like to inquire about:")}`, "_blank");
+                                  } else {
+                                    handleSendMessage(sug);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-cream/5 hover:bg-warm-cream/15 text-[11px] text-warm-cream rounded-full border border-warm-cream/10 transition-colors cursor-pointer"
+                              >
+                                <span>{sug}</span>
+                                <ArrowRight className="w-2.5 h-2.5 text-muted-gold" />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Typing / Thinking State */}
+                  {isThinking && (
+                    <div className="flex items-center gap-2 text-xs text-muted-gold p-3 bg-[#241914] border border-warm-cream/10 rounded-2xl rounded-tl-none w-fit animate-pulse">
+                      <Coffee className="w-3.5 h-3.5 animate-spin" />
+                      <span className="text-[11px] font-mono">Checking live menu & table capacity...</span>
+                    </div>
+                  )}
+
+                  {/* Error State Banner */}
+                  {hasError && !isThinking && (
+                    <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-xl text-red-200 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <span>Connection issue encountered.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRetry}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-900 hover:bg-red-800 text-[10px] uppercase font-bold tracking-wider rounded cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Retry</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Bar */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }}
+                  className="p-3 bg-[#150E0B] border-t border-warm-cream/10 flex items-center gap-2"
+                >
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    disabled={isThinking}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask hours, menu, or book a table..."
+                    className="flex-1 bg-[#1E1511] border border-warm-cream/20 px-3 py-2 text-xs text-warm-cream placeholder:text-warm-cream/40 focus:outline-none focus:border-muted-gold rounded-lg disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isThinking}
+                    className="p-2.5 bg-muted-gold text-espresso hover:bg-muted-gold/90 disabled:opacity-40 transition-colors rounded-lg cursor-pointer"
+                    aria-label="Send"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
     </>
   );
 };
+
+export const CustomerAssistantWidget = CustomerSommelierModal;

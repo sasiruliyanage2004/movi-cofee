@@ -23,7 +23,7 @@ export default async function AdminPage() {
   }
 
   // Load from Supabase if configured, otherwise fallback to local platform store
-  let [reservations, tables, customers, supabaseSettings] = isSupabaseServerConfigured()
+  const [rawReservations, rawTables, rawCustomers, supabaseSettings] = isSupabaseServerConfigured()
     ? await Promise.all([
         supabaseService.getReservations(),
         supabaseService.getAllTables(),
@@ -31,6 +31,10 @@ export default async function AdminPage() {
         supabaseService.getBusinessSettings(),
       ])
     : [null, null, null, null];
+
+  let reservations = rawReservations;
+  let tables = rawTables;
+  let customers = rawCustomers;
 
   if (!reservations || reservations.length === 0) {
     reservations = await dbStorage.getReservations();

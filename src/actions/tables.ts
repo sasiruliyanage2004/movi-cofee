@@ -9,9 +9,8 @@ import { revalidatePath } from "next/cache";
 
 export async function toggleTableStatusAction(id: string, isActive: boolean) {
   try {
-    let success = false;
     if (isSupabaseServerConfigured()) {
-      success = await supabaseService.toggleTableStatus(id, isActive);
+      await supabaseService.toggleTableStatus(id, isActive);
     }
     await dbStorage.toggleTableStatus(id, isActive);
     revalidatePath("/admin");

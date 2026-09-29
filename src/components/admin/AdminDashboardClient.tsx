@@ -22,7 +22,6 @@ import {
   Users,
   Clock,
   CheckCircle2,
-  XCircle,
   MessageCircle,
   LogOut,
   Sparkles,
@@ -42,10 +41,8 @@ import {
   AlertTriangle,
   ChevronRight,
   CalendarDays,
-  UserCheck,
   Store,
   X,
-  Filter,
 } from "lucide-react";
 
 interface AdminDashboardProps {
@@ -1050,7 +1047,6 @@ export const AdminDashboardClient: React.FC<AdminDashboardProps> = ({
                     </tr>
                   ) : (
                     filteredReservations.map((res) => {
-                      const assignedTable = tables.find((t) => t.id === res.tableId);
                       const confirmWhatsAppUrl = notificationService.generateOwnerConfirmationWhatsAppUrl(res);
                       const isUpdating = isUpdatingStatus === res.id;
 
